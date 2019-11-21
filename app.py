@@ -1,56 +1,78 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-import os
-
 import dash
 import dash_core_components as dcc
 import dash_html_components as html
-import pandas as pd
 import plotly.graph_objs as go
 
-from app import app
+import pandas as pd
 
-df = pd.read_csv(
-    'https://gist.githubusercontent.com/chriddyp/'
-    'c78bf172206ce24f77d6363a2d754b59/raw/'
-    'c353e8ef842413cae56ae3920b8fd78468aa4cb2/'
-    'usa-agricultural-exports-2011.csv')
+########### Define your variables
+tabtitle='Dash Playground'
 
-if 'DYNO' in os.environ:
-    app_name = os.environ['DASH_APP_NAME']
-else:
-    app_name = 'dash-barplot'
+########### Load the data
+df = pd.read_csv('https://ianrosewrites.com/1011010/days.csv')
 
-layout = html.Div([
-    html.H1("Food Product Exports in the United States", style={"textAlign": "center"}),
-    html.Div([html.Div([dcc.Dropdown(id='product-selected1',
-                                     options=[{'label': i.title(), 'value': i} for i in df.columns.values[2:]],
-                                     value="poultry")], className="six columns",
-                       style={"width": "40%", "float": "right"}),
-              html.Div([dcc.Dropdown(id='product-selected2',
-                                     options=[{'label': i.title(), 'value': i} for i in df.columns.values[2:]],
-                                     value='beef')], className="six columns", style={"width": "40%", "float": "left"}),
-              ], className="row", style={"padding": 50, "width": "60%", "margin-left": "auto", "margin-right": "auto"}),
-    dcc.Graph(id='my-graph'),
+trace1 = go.Bar(x=df['daynum'], y=df['yes'], name='Counted')
+trace2 = go.Bar(x=df['daynum'], y=df['no'], name='Not Counted')
 
-    # dcc.Link('Go to Source Code', href='{}/code'.format(app_name))
-], className="container")
+pv = pd.pivot_table(df, index=['wknum'], columns=["daywk"], values=['yes'], fill_value=0)
 
+tracemo = go.Bar(x=pv.index, y=pv[('yes', '\'Mon\'')], name='Monday')
+tracetu = go.Bar(x=pv.index, y=pv[('yes', '\'Tues\'')], name='Tuesday')
+tracewe = go.Bar(x=pv.index, y=pv[('yes', '\'Wed\'')], name='Wednesday')
+traceth = go.Bar(x=pv.index, y=pv[('yes', '\'Thurs\'')], name='Thursday')
+tracefr = go.Bar(x=pv.index, y=pv[('yes', '\'Fri\'')], name='Friday')
+tracesa = go.Bar(x=pv.index, y=pv[('yes', '\'Sat\'')], name='Saturday')
+tracesu = go.Bar(x=pv.index, y=pv[('yes', '\'Sun\'')], name='Sunday')
 
-@app.callback(
-    dash.dependencies.Output('my-graph', 'figure'),
-    [dash.dependencies.Input('product-selected1', 'value'),
-     dash.dependencies.Input('product-selected2', 'value')])
-def update_graph(selected_product1, selected_product2):
-    dff = df[(df[selected_product1] >= 2) & (df[selected_product2] >= 2)]
-    trace1 = go.Bar(x=dff['state'], y=dff[selected_product1], name=selected_product1.title(), )
-    trace2 = go.Bar(x=dff['state'], y=dff[selected_product2], name=selected_product2.title(), )
+########### Initiate the app
+external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
+app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
+server = app.server
+app.title=tabtitle
 
-    return {
-        'data': [trace1, trace2],
-        'layout': go.Layout(title=f'State vs Export: {selected_product1.title()}, {selected_product2.title()}',
-                            colorway=["#EF963B", "#EF533B"], hovermode="closest",
-                            xaxis={'title': "State", 'titlefont': {'color': 'black', 'size': 14},
-                                   'tickfont': {'size': 9, 'color': 'black'}},
-                            yaxis={'title': "Export price (million USD)", 'titlefont': {'color': 'black', 'size': 14, },
-                                   'tickfont': {'color': 'black'}})}
+########### Set up the layout
+app.layout = html.Div([
+    html.H1(children='Daily Logged Time'),
+    dcc.Graph(
+        id='life-exp-vs-gdp',
+        figure={
+            'data': [
+                go.Scatter(
+                    x=df[df['daywk'] == i]['daynum'],
+                    y=df[df['daywk'] == i]['yes'],
+                    mode='markers',
+                    opacity=0.7,
+                    marker={
+                        'size': 15,
+                        'line': {'width': 0.5, 'color': 'white'}
+                    },
+                    name=i
+                ) for i in df.daywk.unique()
+            ],
+            'layout': go.Layout(
+                xaxis={'title': 'Day #'},
+                yaxis={'title': 'Hours Logged'},
+                margin={'l': 0, 'b': 0, 't': 0, 'r': 0},
+                legend={'x': 0, 'y': 1},
+                hovermode='closest'
+            )
+        }
+    ), 
+    dcc.Graph(
+        id='example-graph',
+        figure={
+            'data': [trace1, trace2],
+            'layout':
+            go.Layout(barmode='stack')
+        }), 
+    dcc.Graph(
+        id='example-graph-2',
+        figure={
+            'data': [tracemo, tracetu, tracewe, traceth, tracefr, tracesa, tracesu],
+            'layout':
+            go.Layout(barmode='stack')
+        })
+])
+
+if __name__ == '__main__':
+    app.run_server()
