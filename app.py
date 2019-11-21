@@ -22,7 +22,7 @@ tracesa = go.Bar(x=pv.index, y=pv[('yes', '\'Sat\'')], name='Saturday')
 tracesu = go.Bar(x=pv.index, y=pv[('yes', '\'Sun\'')], name='Sunday')
 
 ########### Initiate the app
-external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
+external_stylesheets = ['https://ianrosewrites.com/1011010/dash.css']
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 server = app.server
 app.title=tabtitle
